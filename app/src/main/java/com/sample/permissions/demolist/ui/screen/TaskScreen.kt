@@ -5,6 +5,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
@@ -118,19 +119,17 @@ private fun ScreenContent(
         horizontalAlignment = Alignment.CenterHorizontally,
         modifier = modifier.fillMaxSize()
     ) {
-
-        // TODO: Display a search field for querying a task from a list of tasks, ie typeahead
         OutlinedTextField(
-            label = {
-                Text(text = "Filter Tasks")
-            },
+            modifier = Modifier
+                .padding(8.dp)
+                .fillMaxWidth(),
+            label = { Text(text = "Filter Tasks") },
             value = searchQuery,
             onValueChange = { newQuery ->
                 onQuery(newQuery)
             }
         )
 
-        // TODO: Display the list of tasks
         LazyColumn {
             items(items = taskList, key = { item -> item.id }) { task ->
                 TaskRow(
@@ -153,7 +152,9 @@ private fun TaskRow(
     Row(
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically,
-        modifier = modifier.padding(8.dp)
+        modifier = modifier
+            .fillMaxWidth()
+            .padding(8.dp)
     ) {
         Text(
             text = task.title

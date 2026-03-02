@@ -7,8 +7,15 @@ import com.sample.permissions.demolist.presentation.events.TaskUiEvent
 import com.sample.permissions.demolist.presentation.states.TaskUiState
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.flowOf
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.stateIn
+import kotlin.collections.map
 
 class MainActivityViewModel(
     val taskRepository: TaskRepositoryContract,
@@ -17,14 +24,15 @@ class MainActivityViewModel(
     private val isRefreshing = MutableStateFlow(false)
 
     val uiState = combine(
+        taskRepository.getTasks(),
         query,
-        isRefreshing
-    ) { q, refreshing ->
-        // TODO: replace with typeahead...stubbing for now...
+        isRefreshing,
+    ) { tasks, q, refreshing ->
+        // TODO: refactor this to implement type ahead...
         TaskUiState.Content(
             query = q,
-            tasks = emptyList(),
-            completedCount = 0,
+            tasks = tasks.map { it.toUi() },
+            completedCount = tasks.size,
         )
     }.stateIn(
         viewModelScope,
