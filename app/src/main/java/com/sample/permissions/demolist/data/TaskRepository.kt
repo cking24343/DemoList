@@ -3,29 +3,51 @@ package com.sample.permissions.demolist.data
 import com.sample.permissions.demolist.data.models.TaskDto
 import com.sample.permissions.demolist.domain.TaskRepositoryContract
 import com.sample.permissions.demolist.domain.models.Task
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.update
 import java.util.UUID
 
 internal class TaskRepository : TaskRepositoryContract {
 
     private val state = MutableStateFlow(initialTasks())
 
-    override fun getTasks(): Flow<List<Task>> =
+    override fun getTasks(query: String): Flow<List<Task>> =
         state.map { tasks ->
-            tasks.map { task ->
-                task.toDomain()
-            }
+            tasks
+                .filter {
+                    it.name.contains(query, ignoreCase = true)
+                }.map { task ->
+                    task.toDomain()
+                }
         }
 
 
     override suspend fun toggleTask(taskId: String) {
-        TODO("Not yet implemented")
+        state.update { tasks ->
+            tasks.map {
+                if (it.id == taskId) {
+                    it.copy(completed = !it.completed)
+                } else {
+                    it
+                }
+            }
+        }
     }
 
     override suspend fun refresh() {
-        TODO("Not yet implemented")
+        // simulate a delay
+        delay(600)
+
+        state.update { tasks ->
+            tasks + TaskDto(
+                UUID.randomUUID().toString(),
+                "New task (#${tasks.size+1})",
+                false,
+            )
+        }
     }
 
     // Helpers

@@ -1,5 +1,6 @@
 package com.sample.permissions.demolist.ui.screen
 
+import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -16,14 +17,18 @@ import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
+import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import com.sample.permissions.demolist.domain.models.Task
 import com.sample.permissions.demolist.presentation.events.TaskUiEvent
 import com.sample.permissions.demolist.presentation.models.TaskUi
 import com.sample.permissions.demolist.presentation.states.TaskUiState
@@ -46,7 +51,14 @@ fun TaskScreen(
                 ScreenContent(
                     query = state.query,
                     taskList = state.tasks,
+                    isRefreshing = state.isRefreshing,
                     tasksCompleted = state.completedCount,
+                    onRefresh = {
+                        onEvent(TaskUiEvent.OnRefresh)
+                    },
+                    onQuery = { query ->
+                        onEvent(TaskUiEvent.OnTaskQuery(query))
+                    },
                     onTaskToggled = { taskId ->
                         onEvent(TaskUiEvent.OnToggled(taskId))
                     }
@@ -108,12 +120,12 @@ private fun ScreenContent(
     modifier: Modifier = Modifier,
     query: String = "",
     taskList: List<TaskUi> = emptyList(),
+    isRefreshing: Boolean,
     tasksCompleted: Int = 0,
+    onRefresh: () -> Unit = {},
     onQuery: (String) -> Unit = {},
     onTaskToggled: (String) -> Unit = {}
 ) {
-    val searchQuery by remember { mutableStateOf(query) }
-
     Column(
         verticalArrangement = Arrangement.spacedBy(16.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
@@ -121,21 +133,26 @@ private fun ScreenContent(
     ) {
         OutlinedTextField(
             modifier = Modifier
-                .padding(8.dp)
+                .padding(vertical = 8.dp, horizontal = 12.dp)
                 .fillMaxWidth(),
             label = { Text(text = "Filter Tasks") },
-            value = searchQuery,
+            value = query,
             onValueChange = { newQuery ->
                 onQuery(newQuery)
             }
         )
 
-        LazyColumn {
-            items(items = taskList, key = { item -> item.id }) { task ->
-                TaskRow(
-                    task = task,
-                    onChecked = onTaskToggled,
-                )
+        PullToRefreshBox(
+            isRefreshing = isRefreshing,
+            onRefresh = { onRefresh() }
+        ) {
+            LazyColumn {
+                items(items = taskList, key = { item -> item.id }) { task ->
+                    TaskRow(
+                        task = task,
+                        onChecked = onTaskToggled,
+                    )
+                }
             }
         }
 
@@ -156,8 +173,13 @@ private fun TaskRow(
             .fillMaxWidth()
             .padding(8.dp)
     ) {
+        val alpha by animateFloatAsState(
+            targetValue = if (task.completed) 0.4f else 1f,
+            label = "completedAlpha"
+        )
         Text(
-            text = task.title
+            text = task.title,
+            modifier = Modifier.alpha(alpha)
         )
 
         Checkbox(

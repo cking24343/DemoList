@@ -11,6 +11,7 @@ sealed class TaskUiState {
 
     data class Content(
         val query: String,
+        val isRefreshing: Boolean,
         val tasks: List<TaskUi>,
         val completedCount: Int,
     ) : TaskUiState()
